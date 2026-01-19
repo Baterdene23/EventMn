@@ -1,0 +1,211 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String
+  avatarUrl     String?
+  role          UserRole  @default(USER)
+  interests     String[]  @default([])
+
+  // Relations
+  events        Event[]   @relation("EventOwner")
+  likes         Like[]
+  attendees     Attendee[]
+  sessions      Session[]
+  eventMessages EventMessage[]
+  sentMessages     PrivateMessage[] @relation("SentMessages")
+  receivedMessages PrivateMessage[] @relation("ReceivedMessages")
+  notifications    Notification[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  title         String
+  slug          String      @unique
+  excerpt       String?
+  description   String?
+  category      String
+  imageSrc      String?
+  
+  // Location
+  city          String
+  location      String?
+  
+  // Time
+  date          String
+  startAt       DateTime?
+  endAt         DateTime?
+  
+  // Pricing
+  price         Int         @default(0)
+  
+  // Status
+  status        EventStatus @default(DRAFT)
+  
+  // Capacity - нийт хэдэн хүн оролцох боломжтой
+  capacity      Int?
+  
+  // Metrics
+  attendeeCount Int         @default(0)
+  
+  // Timestamps
+  publishedAt   DateTime?
+
+  // Relations
+  ownerId       String
+  owner         User        @relation("EventOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  likes         Like[]
+  attendees     Attendee[]
+  messages      EventMessage[]
+  privateMessages PrivateMessage[]
+
+  @@index([ownerId])
+  @@index([city])
+  @@index([category])
+  @@map("events")
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("likes")
+}
+
+model Attendee {
+  id        String         @id @default(cuid())
+  userId    String
+  eventId   String
+  status    AttendeeStatus @default(REGISTERED)
+
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@map("attendees")
+}
+
+model EventMessage {
+  id        String   @id @default(cuid())
+  content   String
+  eventId   String
+  userId    String
+  createdAt DateTime @default(now())
+  
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([eventId])
+  @@index([userId])
+  @@map("event_messages")
+}
+
+// Private message between user and event owner
+model PrivateMessage {
+  id         String   @id @default(cuid())
+  content    String
+  eventId    String
+  senderId   String
+  receiverId String
+  createdAt  DateTime @default(now())
+  isRead     Boolean  @default(false)
+  
+  event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sender   User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@index([eventId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("private_messages")
+}
+
+// Notification model
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  
+  // Related entities (optional)
+  eventId   String?
+  fromUserId String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  USER
+  ORGANIZER
+  ADMIN
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+
+enum AttendeeStatus {
+  REGISTERED
+  CHECKED_IN
+  CANCELLED
+}
+
+enum NotificationType {
+  MESSAGE
+  EVENT_REMINDER
+  EVENT_UPDATE
+  NEW_ATTENDEE
+  ATTENDEE_CANCELLED
+  SYSTEM
+}
