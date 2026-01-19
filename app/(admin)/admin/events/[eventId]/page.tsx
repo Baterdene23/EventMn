@@ -214,7 +214,7 @@ export default async function AdminEventDetailsPage({
 							href={`/admin/users/${event.owner.id}`}
 							className="mt-3 block text-sm text-primary hover:underline"
 						>
-							Хэрэглэгчийн дэлгэрэнгүй
+							Хэрэглэгчийн дэлгэрэнгүй үзэх
 						</Link>
 					</div>
 
