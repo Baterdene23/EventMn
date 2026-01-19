@@ -28,6 +28,15 @@ export default async function AdminEventDetailsPage({
 }: {
 	params: Promise<{ eventId: string }>
 }) {
+	type AttendeeRow = {
+		id: string
+		user: {
+			id: string
+			name: string | null
+			email: string
+		}
+	}
+
 	const session = await getSession()
 	if (!session) {
 		redirect("/login?returnTo=/admin/events")
@@ -61,7 +70,7 @@ export default async function AdminEventDetailsPage({
 	if (!event) notFound()
 
 	// Get attendees list
-	const attendees = await prisma.attendee.findMany({
+	const attendees: AttendeeRow[] = await prisma.attendee.findMany({
 		where: { eventId },
 		include: {
 			user: {
@@ -106,7 +115,7 @@ export default async function AdminEventDetailsPage({
 				<div className="lg:col-span-2 space-y-6">
 					{/* Cover Image */}
 					{event.imageSrc && (
-						<div className="relative aspect-[2/1] overflow-hidden rounded-2xl bg-muted">
+						<div className="relative aspect-2/1 overflow-hidden rounded-2xl bg-muted">
 							<Image
 								src={event.imageSrc}
 								alt={event.title}
@@ -131,7 +140,7 @@ export default async function AdminEventDetailsPage({
 							<p className="mt-2 text-sm text-muted-foreground">Одоогоор оролцогч байхгүй байна.</p>
 						) : (
 							<div className="mt-4 divide-y">
-								{attendees.map((attendee) => (
+								{attendees.map((attendee: AttendeeRow) => (
 									<div key={attendee.id} className="flex items-center gap-3 py-2">
 										<div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
 											<User className="h-4 w-4 text-muted-foreground" />
