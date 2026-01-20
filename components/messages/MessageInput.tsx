@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/Input"
 
 interface MessageInputProps {
 	onSend: (content: string) => Promise<void>
+	onTyping?: () => void
 	disabled?: boolean
 	placeholder?: string
 }
 
 export function MessageInput({
 	onSend,
+	onTyping,
 	disabled = false,
 	placeholder = "Мессеж бичих...",
 }: MessageInputProps) {
@@ -44,11 +46,19 @@ export function MessageInput({
 		}
 	}
 
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setMessage(e.target.value)
+		// Trigger typing indicator
+		if (onTyping && e.target.value.length > 0) {
+			onTyping()
+		}
+	}
+
 	return (
 		<div className="flex gap-2 border-t pt-4">
 			<Input
 				value={message}
-				onChange={(e) => setMessage(e.target.value)}
+				onChange={handleChange}
 				onKeyDown={handleKeyDown}
 				placeholder={placeholder}
 				disabled={sending || disabled}

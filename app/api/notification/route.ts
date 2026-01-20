@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client"
 import { getSession } from "@/lib/auth/session"
 import { prisma } from "@/lib/db/client"
 
-// Хэрэглэгчийн бүх notification-г авах
+// Хэрэглэгчийн бүх notification-г авах (MESSAGE төрлийг хасах - message badge дээр харуулна)
 export async function GET() {
 	const session = await getSession()
 	if (!session) {
@@ -13,13 +13,21 @@ export async function GET() {
 
 	try {
 		const notifications = await prisma.notification.findMany({
-			where: { userId: session.userId },
+			where: {
+				userId: session.userId,
+				type: { not: "MESSAGE" }, // MESSAGE төрлийг хасах
+			},
 			orderBy: { createdAt: "desc" },
 			take: 50,
 		})
 
+		// Unread count - MESSAGE төрлийг хасах
 		const unreadCount = await prisma.notification.count({
-			where: { userId: session.userId, isRead: false },
+			where: {
+				userId: session.userId,
+				readAt: null,
+				type: { not: "MESSAGE" },
+			},
 		})
 
 		return NextResponse.json({ notifications, unreadCount })

@@ -85,7 +85,37 @@ export async function PATCH(
 				status,
 				...(status === "PUBLISHED" && { publishedAt: new Date() }),
 			},
+			include: {
+				owner: { select: { id: true } },
+			},
 		})
+
+		// Create notification for the event owner
+		if (status === "PUBLISHED") {
+			await prisma.notification.create({
+				data: {
+					userId: event.ownerId,
+					type: "EVENT_UPDATE",
+					title: "Эвент зөвшөөрөгдлөө",
+					message: `Таны "${event.title}" эвент амжилттай нийтлэгдлээ!`,
+					link: `/events/${event.id}`,
+					eventId: event.id,
+					fromUserId: session.userId,
+				},
+			})
+		} else if (status === "CANCELLED") {
+			await prisma.notification.create({
+				data: {
+					userId: event.ownerId,
+					type: "EVENT_UPDATE",
+					title: "Эвент цуцлагдлаа",
+					message: `Таны "${event.title}" эвент цуцлагдлаа.`,
+					link: `/events/${event.id}`,
+					eventId: event.id,
+					fromUserId: session.userId,
+				},
+			})
+		}
 
 		return NextResponse.json(event)
 	} catch (error) {

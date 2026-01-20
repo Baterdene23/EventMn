@@ -25,6 +25,7 @@ export interface Thread {
 
 export interface ThreadData {
 	threadId: string
+	currentUserId: string
 	event: {
 		id: string
 		title: string

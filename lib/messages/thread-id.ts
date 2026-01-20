@@ -41,7 +41,7 @@ export function getThreadIdCandidates(threadId: string): ThreadIdParts[] {
 	}
 
 	// Generic fallback: try all underscore split points (bounded)
-	let added = candidates.length
+	const added = candidates.length
 	for (let i = 0; i < threadId.length; i++) {
 		if (threadId[i] !== "_") continue
 		push(threadId.slice(0, i), threadId.slice(i + 1))

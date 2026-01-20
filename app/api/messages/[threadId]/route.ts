@@ -81,6 +81,7 @@ export async function GET(
 
 	return NextResponse.json({
 		threadId,
+		currentUserId: userId,
 		event,
 		otherUser,
 		messages: messages.map((m) => ({
@@ -166,4 +167,54 @@ export async function POST(
 		createdAt: message.createdAt,
 		isOwn: true,
 	})
+}
+
+// Мессеж устгах
+export async function DELETE(
+	req: Request,
+	ctx: { params: Promise<{ threadId: string }> }
+) {
+	const session = await getSession()
+	if (!session) {
+		return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+	}
+
+	const { threadId } = await ctx.params
+	const resolved = await resolveThreadParts(threadId)
+	if (!resolved) {
+		return NextResponse.json({ error: "Invalid thread ID" }, { status: 400 })
+	}
+
+	const body = await req.json()
+	const { messageId } = body as { messageId?: string }
+
+	if (!messageId) {
+		return NextResponse.json({ error: "messageId шаардлагатай" }, { status: 400 })
+	}
+
+	const userId = session.userId
+
+	// Find message and verify ownership
+	const message = await prisma.privateMessage.findUnique({
+		where: { id: messageId },
+	})
+
+	if (!message) {
+		return NextResponse.json({ error: "Message not found" }, { status: 404 })
+	}
+
+	// Only sender can delete their own message
+	if (message.senderId !== userId) {
+		return NextResponse.json(
+			{ error: "Зөвхөн өөрийн мессежийг устгах боломжтой" },
+			{ status: 403 }
+		)
+	}
+
+	// Delete the message (hard delete for private messages)
+	await prisma.privateMessage.delete({
+		where: { id: messageId },
+	})
+
+	return NextResponse.json({ ok: true })
 }

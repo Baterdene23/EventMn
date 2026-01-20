@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { Camera, Loader2, Sparkles } from "lucide-react"
+import { Camera, Loader2, Shield, ShieldCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
@@ -16,6 +16,7 @@ type UserProfile = {
   role: string
   about?: string | null
   interests?: string[]
+  twoFactorEnabled?: boolean
 }
 
 export default function SettingsPage() {
@@ -26,9 +27,12 @@ export default function SettingsPage() {
   const [about, setAbout] = React.useState("")
   const [interests, setInterests] = React.useState<string[]>([])
 
+  const [twoFactorEnabled, setTwoFactorEnabled] = React.useState(false)
+
   const [loading, setLoading] = React.useState(true)
   const [saving, setSaving] = React.useState(false)
   const [uploading, setUploading] = React.useState(false)
+  const [toggling2FA, setToggling2FA] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [success, setSuccess] = React.useState(false)
 
@@ -49,6 +53,7 @@ export default function SettingsPage() {
         setAvatarUrl(data.avatarUrl)
         setAbout(data.about ?? "")
         setInterests(data.interests ?? [])
+        setTwoFactorEnabled(data.twoFactorEnabled ?? false)
       } catch {
         setError("Хэрэглэгчийн мэдээлэл татахад алдаа гарлаа")
       } finally {
@@ -112,6 +117,32 @@ export default function SettingsPage() {
       setError(err instanceof Error ? err.message : "Хадгалахад алдаа гарлаа")
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function toggle2FA() {
+    setToggling2FA(true)
+    setError(null)
+
+    try {
+      const res = await fetch("/api/users/me/2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !twoFactorEnabled }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to toggle 2FA")
+      }
+
+      setTwoFactorEnabled(!twoFactorEnabled)
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "2FA тохируулахад алдаа гарлаа")
+    } finally {
+      setToggling2FA(false)
     }
   }
 
@@ -248,6 +279,46 @@ export default function SettingsPage() {
             </Button>
           </div>
         </form>
+      </div>
+
+      {/* Security / 2FA Section */}
+      <div className="rounded-2xl border bg-card p-5">
+        <h2 className="text-lg font-semibold">Аюулгүй байдал</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Хоёр шатлалт баталгаажуулалт (2FA) тохируулах.</p>
+
+        <div className="mt-5 flex items-center justify-between rounded-lg border p-4">
+          <div className="flex items-center gap-3">
+            {twoFactorEnabled ? (
+              <ShieldCheck className="h-8 w-8 text-green-500" />
+            ) : (
+              <Shield className="h-8 w-8 text-muted-foreground" />
+            )}
+            <div>
+              <p className="font-medium">Хоёр шатлалт баталгаажуулалт (2FA)</p>
+              <p className="text-sm text-muted-foreground">
+                {twoFactorEnabled
+                  ? "Идэвхтэй - Нэвтрэх үед имэйлээр код авна"
+                  : "Идэвхгүй - Нэвтрэхэд зөвхөн нууц үг шаардана"}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant={twoFactorEnabled ? "secondary" : "default"}
+            onClick={toggle2FA}
+            disabled={toggling2FA}
+          >
+            {toggling2FA ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            {twoFactorEnabled ? "Унтраах" : "Идэвхжүүлэх"}
+          </Button>
+        </div>
+
+        <p className="mt-3 text-sm text-muted-foreground">
+          2FA идэвхжүүлсний дараа нэвтрэх болгонд имэйлээр 6 оронтой код авч баталгаажуулна.
+        </p>
       </div>
     </div>
   )

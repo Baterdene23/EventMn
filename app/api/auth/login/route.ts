@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/db/client"
 import { SESSION_COOKIE_NAME } from "@/lib/auth/session"
+import { verifyPassword, createOtp, sendOtpEmail } from "@/lib/auth/otp"
 
 export async function POST(request: Request) {
 	try {
@@ -31,15 +32,38 @@ export async function POST(request: Request) {
 			)
 		}
 
-		// Compare plain password
-		if (user.password !== password) {
+		// Check if password is hashed (bcrypt hashes start with $2)
+		const isHashedPassword = user.password.startsWith("$2")
+		let passwordValid = false
+
+		if (isHashedPassword) {
+			passwordValid = await verifyPassword(password, user.password)
+		} else {
+			// Legacy plain text password comparison
+			passwordValid = user.password === password
+		}
+
+		if (!passwordValid) {
 			return NextResponse.json(
 				{ error: "Имэйл эсвэл нууц үг буруу байна" },
 				{ status: 401 }
 			)
 		}
 
-		// Create session
+		// Check if 2FA is enabled
+		if (user.twoFactorEnabled) {
+			// Send OTP for 2FA
+			const code = await createOtp(user.email, "LOGIN_2FA")
+			await sendOtpEmail(user.email, code, "LOGIN_2FA")
+
+			return NextResponse.json({
+				ok: true,
+				requiresOtp: true,
+				email: user.email,
+			})
+		}
+
+		// No 2FA - create session directly
 		const session = await prisma.session.create({
 			data: {
 				userId: user.id,

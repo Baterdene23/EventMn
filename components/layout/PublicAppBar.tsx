@@ -9,6 +9,7 @@ import { Bell, Heart, Mail, Menu, Search, User, Plus, Settings, LogOut, LayoutDa
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog"
+import { BadgeCount, useBadgeCounts } from "@/components/badges/BadgeCount"
 import {
 	Sheet,
 	SheetContent,
@@ -37,6 +38,7 @@ type PublicAppBarProps = {
 export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarProps) {
 	const router = useRouter()
 	const [searchQuery, setSearchQuery] = useState("")
+	const { counts } = useBadgeCounts(isAuthed ? 30000 : 0) // Only poll if authenticated
 
 	function handleSearch(e: React.FormEvent) {
 		e.preventDefault()
@@ -123,9 +125,10 @@ export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarPr
 									<Plus className="h-5 w-5" />
 								</Link>
 							</Button>
-							<Button variant="ghost" size="icon" className="hidden sm:flex" asChild>
+							<Button variant="ghost" size="icon" className="relative hidden sm:flex" asChild>
 								<Link href="/dashboard/messages" aria-label="Мессеж" title="Мессеж">
 									<Mail className="h-5 w-5" />
+									<BadgeCount count={counts.messages} />
 								</Link>
 							</Button>
 							<Button variant="ghost" size="icon" className="hidden sm:flex" asChild>
@@ -133,9 +136,10 @@ export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarPr
 									<Heart className="h-5 w-5" />
 								</Link>
 							</Button>
-							<Button variant="ghost" size="icon" className="hidden sm:flex" asChild>
+							<Button variant="ghost" size="icon" className="relative hidden sm:flex" asChild>
 								<Link href="/dashboard/notification" aria-label="Мэдэгдэл" title="Мэдэгдэл">
 									<Bell className="h-5 w-5" />
+									<BadgeCount count={counts.notifications} />
 								</Link>
 							</Button>
 							

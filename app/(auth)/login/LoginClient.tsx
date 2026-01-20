@@ -30,6 +30,15 @@ export function LoginClient({ returnTo }: { returnTo?: string }) {
 				setError(data.error || "Нэвтрэхэд алдаа гарлаа")
 				return
 			}
+
+			// Check if 2FA is required
+			if (data.requiresOtp) {
+				// Store email for OTP page
+				sessionStorage.setItem("login_2fa_email", data.email)
+				router.push(`/login-otp?email=${encodeURIComponent(data.email)}`)
+				return
+			}
+
 			router.push(returnTo || "/dashboard")
 			router.refresh()
 		} catch {

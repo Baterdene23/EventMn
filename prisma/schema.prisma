@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,28 +6,25 @@ datasource db {
   provider = "postgresql"
 }
 
-// ============================================================================
-// MODELS
-// ============================================================================
-
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  name          String?
-  password      String
-  avatarUrl     String?
-  role          UserRole  @default(USER)
-  interests     String[]  @default([])
-
-  // Relations
-  events        Event[]   @relation("EventOwner")
-  likes         Like[]
-  attendees     Attendee[]
-  sessions      Session[]
-  eventMessages EventMessage[]
-  sentMessages     PrivateMessage[] @relation("SentMessages")
-  receivedMessages PrivateMessage[] @relation("ReceivedMessages")
+  id               String           @id @default(cuid())
+  email            String           @unique
+  name             String?
+  avatarUrl        String?
+  role             UserRole         @default(USER)
+  password         String
+  interests        String[]         @default([])
+  twoFactorEnabled Boolean          @default(false)
+  attendees        Attendee[]
+  eventMessages    EventMessage[]
+  events           Event[]          @relation("EventOwner")
+  likes            Like[]
   notifications    Notification[]
+  receivedMessages PrivateMessage[] @relation("ReceivedMessages")
+  sentMessages     PrivateMessage[] @relation("SentMessages")
+  sessions         Session[]
+  conversationMembers ConversationMember[]
+  messages         Message[]
 
   @@map("users")
 }
@@ -40,51 +34,34 @@ model Session {
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
 model Event {
-  id            String      @id @default(cuid())
-  title         String
-  slug          String      @unique
-  excerpt       String?
-  description   String?
-  category      String
-  imageSrc      String?
-  
-  // Location
-  city          String
-  location      String?
-  
-  // Time
-  date          String
-  startAt       DateTime?
-  endAt         DateTime?
-  
-  // Pricing
-  price         Int         @default(0)
-  
-  // Status
-  status        EventStatus @default(DRAFT)
-  
-  // Capacity - нийт хэдэн хүн оролцох боломжтой
-  capacity      Int?
-  
-  // Metrics
-  attendeeCount Int         @default(0)
-  
-  // Timestamps
-  publishedAt   DateTime?
-
-  // Relations
-  ownerId       String
-  owner         User        @relation("EventOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  likes         Like[]
-  attendees     Attendee[]
-  messages      EventMessage[]
+  id              String           @id @default(cuid())
+  title           String
+  slug            String           @unique
+  excerpt         String?
+  description     String?
+  category        String
+  imageSrc        String?
+  city            String
+  location        String?
+  date            String
+  startAt         DateTime?
+  endAt           DateTime?
+  price           Int              @default(0)
+  status          EventStatus      @default(DRAFT)
+  attendeeCount   Int              @default(0)
+  publishedAt     DateTime?
+  ownerId         String
+  capacity        Int?
+  attendees       Attendee[]
+  messages        EventMessage[]
+  owner           User             @relation("EventOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  likes           Like[]
   privateMessages PrivateMessage[]
 
   @@index([ownerId])
@@ -98,23 +75,20 @@ model Like {
   userId    String
   eventId   String
   createdAt DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
   @@map("likes")
 }
 
 model Attendee {
-  id        String         @id @default(cuid())
-  userId    String
-  eventId   String
-  status    AttendeeStatus @default(REGISTERED)
-
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id      String         @id @default(cuid())
+  userId  String
+  eventId String
+  status  AttendeeStatus @default(REGISTERED)
+  event   Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, eventId])
   @@map("attendees")
@@ -126,16 +100,14 @@ model EventMessage {
   eventId   String
   userId    String
   createdAt DateTime @default(now())
-  
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([eventId])
   @@index([userId])
   @@map("event_messages")
 }
 
-// Private message between user and event owner
 model PrivateMessage {
   id         String   @id @default(cuid())
   content    String
@@ -144,42 +116,98 @@ model PrivateMessage {
   receiverId String
   createdAt  DateTime @default(now())
   isRead     Boolean  @default(false)
-  
-  event    Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  sender   User  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver User  @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-  
+  event      Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
   @@index([eventId])
   @@index([senderId])
   @@index([receiverId])
   @@map("private_messages")
 }
 
-// Notification model
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  title     String
-  message   String
-  link      String?
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  
-  // Related entities (optional)
-  eventId   String?
+  id         String           @id @default(cuid())
+  userId     String
+  type       NotificationType
+  title      String
+  message    String
+  link       String?
+  isRead     Boolean          @default(false)
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+  eventId    String?
   fromUserId String?
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([createdAt])
+  @@index([userId, readAt])
   @@map("notifications")
 }
 
-// ============================================================================
-// ENUMS
-// ============================================================================
+// ==========================================
+// Email OTP for authentication flows
+// ==========================================
+
+model EmailOtp {
+  id        String       @id @default(cuid())
+  email     String
+  purpose   OtpPurpose
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int          @default(0)
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+
+  @@index([email, purpose])
+  @@index([codeHash])
+  @@map("email_otps")
+}
+
+// ==========================================
+// Conversation-based messaging system
+// ==========================================
+
+model Conversation {
+  id        String               @id @default(cuid())
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+  members   ConversationMember[]
+  messages  Message[]
+
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  lastReadAt     DateTime?
+  joinedAt       DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+  @@index([conversationId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  createdAt      DateTime     @default(now())
+  deletedAt      DateTime?    // soft delete
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
 
 enum UserRole {
   USER
@@ -194,7 +222,6 @@ enum EventStatus {
   COMPLETED
 }
 
-
 enum AttendeeStatus {
   REGISTERED
   CHECKED_IN
@@ -208,4 +235,10 @@ enum NotificationType {
   NEW_ATTENDEE
   ATTENDEE_CANCELLED
   SYSTEM
+}
+
+enum OtpPurpose {
+  RESET_PASSWORD
+  LOGIN_2FA
+  VERIFY_EMAIL
 }

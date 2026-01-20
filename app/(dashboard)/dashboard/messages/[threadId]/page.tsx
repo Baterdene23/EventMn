@@ -9,9 +9,11 @@ import {
 	MessageBubble,
 	MessageInput,
 	EmptyState,
+	TypingIndicator,
 	type Message,
 	type ThreadData,
 } from "@/components/messages"
+import { useTypingIndicator } from "@/hooks/useTypingIndicator"
 
 export default function ChatThreadPage({
 	params,
@@ -24,6 +26,12 @@ export default function ChatThreadPage({
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
+
+	// Typing indicator hook
+	const { typingUsers, handleTyping, stopTyping } = useTypingIndicator(
+		threadId || "",
+		threadData?.currentUserId || ""
+	)
 
 	// Resolve params
 	useEffect(() => {
@@ -94,6 +102,9 @@ export default function ChatThreadPage({
 		async (content: string) => {
 			if (!threadId) return
 
+			// Stop typing indicator when sending
+			stopTyping()
+
 			const res = await fetch(`/api/messages/${threadId}`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -106,6 +117,23 @@ export default function ChatThreadPage({
 					if (prev.some((m) => m.id === msg.id)) return prev
 					return [...prev, msg]
 				})
+			}
+		},
+		[threadId, stopTyping]
+	)
+
+	const handleDeleteMessage = useCallback(
+		async (messageId: string) => {
+			if (!threadId) return
+
+			const res = await fetch(`/api/messages/${threadId}`, {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ messageId }),
+			})
+
+			if (res.ok) {
+				setMessages((prev) => prev.filter((m) => m.id !== messageId))
 			}
 		},
 		[threadId]
@@ -159,16 +187,22 @@ export default function ChatThreadPage({
 						</p>
 					) : (
 						messages.map((message) => (
-							<MessageBubble key={message.id} message={message} />
+							<MessageBubble
+								key={message.id}
+								message={message}
+								onDelete={handleDeleteMessage}
+							/>
 						))
 					)}
+					{/* Typing indicator */}
+					<TypingIndicator typingUsers={typingUsers} />
 					<div ref={messagesEndRef} />
 				</div>
 			</div>
 
 			{/* Input */}
 			<div className="p-4">
-				<MessageInput onSend={handleSendMessage} />
+				<MessageInput onSend={handleSendMessage} onTyping={handleTyping} />
 			</div>
 		</div>
 	)

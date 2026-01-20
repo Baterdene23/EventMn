@@ -20,6 +20,7 @@ export async function GET() {
 				avatarUrl: true,
 				role: true,
 				interests: true,
+				twoFactorEnabled: true,
 			},
 		})
 
@@ -82,6 +83,7 @@ export async function PATCH(request: Request) {
 				avatarUrl: true,
 				role: true,
 				interests: true,
+				twoFactorEnabled: true,
 			},
 		})
 
