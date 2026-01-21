@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { getSession } from "@/lib/auth/session"
 import { prisma } from "@/lib/db/client"
+import { getPusher } from "@/lib/pusher/server"
 
 type Params = { params: Promise<{ conversationId: string }> }
 
@@ -130,6 +131,23 @@ export async function POST(req: Request, { params }: Params) {
 			data: { lastReadAt: new Date() },
 		}),
 	])
+
+	// Trigger real-time event via Pusher
+	const pusher = getPusher()
+	if (pusher) {
+		try {
+			await pusher.trigger(`conversation-${conversationId}`, "new-message", {
+				id: message.id,
+				content: message.content,
+				senderId: message.senderId,
+				senderName: message.sender.name,
+				senderAvatar: message.sender.avatarUrl,
+				createdAt: message.createdAt,
+			})
+		} catch (error) {
+			console.error("Pusher trigger error:", error)
+		}
+	}
 
 	return NextResponse.json({
 		id: message.id,

@@ -31,6 +31,13 @@ export function LoginClient({ returnTo }: { returnTo?: string }) {
 				return
 			}
 
+			// Check if email verification is required
+			if (data.requireVerification) {
+				sessionStorage.setItem("verify_email", data.email)
+				router.push(`/verify?email=${encodeURIComponent(data.email)}`)
+				return
+			}
+
 			// Check if 2FA is required
 			if (data.requiresOtp) {
 				// Store email for OTP page

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/db/client"
-import { SESSION_COOKIE_NAME } from "@/lib/auth/session"
 import { createOtp, sendOtpEmail } from "@/lib/auth/otp"
 
 export async function POST(request: Request) {
@@ -28,54 +27,61 @@ export async function POST(request: Request) {
 			)
 		}
 
+		const normalizedEmail = email.toLowerCase()
+
 		// Check if user already exists
 		const existingUser = await prisma.user.findUnique({
-			where: { email: email.toLowerCase() },
+			where: { email: normalizedEmail },
 		})
 
 		if (existingUser) {
+			// If user exists but not verified, resend OTP
+			if (!existingUser.emailVerified) {
+				const code = await createOtp(normalizedEmail, "VERIFY_EMAIL")
+				await sendOtpEmail(normalizedEmail, code, "VERIFY_EMAIL")
+				return NextResponse.json({
+					ok: true,
+					requireVerification: true,
+					email: normalizedEmail,
+					message: "Баталгаажуулах код дахин илгээлээ",
+				})
+			}
 			return NextResponse.json(
 				{ error: "Энэ имэйл хаягаар бүртгэлтэй хэрэглэгч байна" },
 				{ status: 400 }
 			)
 		}
 
-		// Create user with plain password
+		// Create user with plain password (emailVerified = false by default)
 		const user = await prisma.user.create({
 			data: {
-				email: email.toLowerCase(),
+				email: normalizedEmail,
 				name: name || null,
 				password,
+				emailVerified: false,
 			},
 		})
+
+		// Create and send OTP for email verification
 		const code = await createOtp(user.email, "VERIFY_EMAIL")
-        const emailResult = await sendOtpEmail(user.email, code, "VERIFY_EMAIL")
-          if (!emailResult.success) {
-             return NextResponse.json(
-            { error: emailResult.error || "Имэйл илгээхэд алдаа гарлаа" },
-          { status: 500 }
-           )
-         }
+		const emailResult = await sendOtpEmail(user.email, code, "VERIFY_EMAIL")
+		
+		if (!emailResult.success) {
+			// Delete user if email fails (so they can try again)
+			await prisma.user.delete({ where: { id: user.id } })
+			return NextResponse.json(
+				{ error: emailResult.error || "Имэйл илгээхэд алдаа гарлаа" },
+				{ status: 500 }
+			)
+		}
 
-		// Create session
-		const session = await prisma.session.create({
-			data: {
-				userId: user.id,
-				expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-			},
+		// Don't create session - require email verification first
+		return NextResponse.json({
+			ok: true,
+			requireVerification: true,
+			email: normalizedEmail,
+			message: "Бүртгэл амжилттай. Имэйлээр илгээсэн кодоор баталгаажуулна уу.",
 		})
-
-		const response = NextResponse.json({ ok: true, userId: user.id })
-		response.cookies.set({
-			name: SESSION_COOKIE_NAME,
-			value: session.id,
-			httpOnly: true,
-			sameSite: "lax",
-			path: "/",
-			maxAge: 60 * 60 * 24 * 7, // 7 days
-		})
-
-		return response
 	} catch (error) {
 		console.error("Register error:", error)
 		return NextResponse.json(

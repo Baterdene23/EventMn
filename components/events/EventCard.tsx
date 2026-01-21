@@ -19,6 +19,7 @@ export type EventSummary = {
 	status: EventStatus
 	category?: string
 	excerpt?: string
+	description?: string
 	imageSrc?: string
 	attendeeCount?: number
 }

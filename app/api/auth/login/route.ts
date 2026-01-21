@@ -50,6 +50,20 @@ export async function POST(request: Request) {
 			)
 		}
 
+		// Check if email is verified
+		if (!user.emailVerified) {
+			// Send new OTP for verification
+			const code = await createOtp(user.email, "VERIFY_EMAIL")
+			await sendOtpEmail(user.email, code, "VERIFY_EMAIL")
+
+			return NextResponse.json({
+				ok: true,
+				requireVerification: true,
+				email: user.email,
+				message: "Имэйл баталгаажуулаагүй байна. Шинэ код илгээлээ.",
+			})
+		}
+
 		// Check if 2FA is enabled
 		if (user.twoFactorEnabled) {
 			// Send OTP for 2FA

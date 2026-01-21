@@ -15,6 +15,7 @@ model User {
   password         String
   interests        String[]         @default([])
   twoFactorEnabled Boolean          @default(false)
+  emailVerified    Boolean          @default(false)
   attendees        Attendee[]
   eventMessages    EventMessage[]
   events           Event[]          @relation("EventOwner")

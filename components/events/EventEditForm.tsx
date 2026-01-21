@@ -233,7 +233,7 @@ export function EventEditForm({ event }: EventEditFormProps) {
 						type="number"
 						value={values.price}
 						onChange={(e) => update("price", Number(e.target.value))}
-						placeholder="0"
+						placeholder=""
 					/>
 				</div>
 			</div>

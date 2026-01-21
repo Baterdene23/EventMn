@@ -31,7 +31,8 @@ export function RegisterClient({ returnTo }: { returnTo?: string }) {
 				setError(data.error || "Бүртгэхэд алдаа гарлаа")
 				return
 			}
-				if (data.requiresOtp && data.email) {
+			// Redirect to verify page if email verification is required
+			if (data.requireVerification && data.email) {
 				sessionStorage.setItem("verify_email", data.email)
 				router.push(`/verify?email=${encodeURIComponent(data.email)}`)
 				return

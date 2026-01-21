@@ -68,5 +68,11 @@ export async function GET() {
 		(a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime()
 	)
 
-	return NextResponse.json({ threads })
+	// Calculate total unread count for badge
+	const totalUnreadCount = threads.reduce((sum, t) => sum + t.unreadCount, 0)
+	
+	// Count how many PEOPLE have sent unread messages (threads with unread > 0)
+	const unreadPeopleCount = threads.filter((t) => t.unreadCount > 0).length
+
+	return NextResponse.json({ threads, totalUnreadCount, unreadPeopleCount })
 }

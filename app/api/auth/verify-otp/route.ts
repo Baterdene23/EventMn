@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { verifyOtp, type OtpPurpose } from "@/lib/auth/otp"
+import { prisma } from "@/lib/db/client"
 
 const VALID_PURPOSES: OtpPurpose[] = ["RESET_PASSWORD", "LOGIN_2FA", "VERIFY_EMAIL"]
 
@@ -12,6 +13,8 @@ export async function POST(request: Request) {
 			code?: string
 			purpose?: OtpPurpose
 		}
+
+		console.log("Verify OTP request:", { email, code, purpose })
 
 		// Validation
 		if (!email || !code) {
@@ -29,15 +32,26 @@ export async function POST(request: Request) {
 		}
 
 		const normalizedEmail = email.toLowerCase().trim()
+		console.log("Normalized email:", normalizedEmail)
 
 		// Verify OTP
 		const result = await verifyOtp(normalizedEmail, purpose, code)
+		console.log("Verify OTP result:", result)
 
 		if (!result.valid) {
 			return NextResponse.json(
 				{ error: result.error || "Буруу код" },
 				{ status: 400 }
 			)
+		}
+
+		// If verifying email, update user's emailVerified status
+		if (purpose === "VERIFY_EMAIL") {
+			await prisma.user.update({
+				where: { email: normalizedEmail },
+				data: { emailVerified: true },
+			})
+			console.log("User emailVerified updated for:", normalizedEmail)
 		}
 
 		return NextResponse.json({ ok: true, verified: true })

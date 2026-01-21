@@ -2,23 +2,39 @@
 
 import * as React from "react"
 import { getPusherClient, type TypingEvent, type TypingUser } from "@/lib/pusher/client"
+import type { Message } from "@/components/messages"
 
 const TYPING_TIMEOUT = 2000 // 2 seconds of inactivity = stopped typing
 
 /**
- * Hook to manage typing indicator state
+ * Hook to manage typing indicator state and real-time messages
  * @param threadId - The thread/conversation ID
  * @param currentUserId - Current user's ID (to ignore own typing events)
+ * @param onNewMessage - Optional callback when a new message arrives
+ * @param onMessageDeleted - Optional callback when a message is deleted
  */
-export function useTypingIndicator(threadId: string, currentUserId: string) {
+export function useTypingIndicator(
+	threadId: string,
+	currentUserId: string,
+	onNewMessage?: (message: Message) => void,
+	onMessageDeleted?: (messageId: string) => void
+) {
 	const [typingUsers, setTypingUsers] = React.useState<TypingUser[]>([])
 	const [isTyping, setIsTyping] = React.useState(false)
 	const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+	const onNewMessageRef = React.useRef(onNewMessage)
+	const onMessageDeletedRef = React.useRef(onMessageDeleted)
 
-	// Subscribe to typing events
+	// Keep callback refs updated
+	React.useEffect(() => {
+		onNewMessageRef.current = onNewMessage
+		onMessageDeletedRef.current = onMessageDeleted
+	}, [onNewMessage, onMessageDeleted])
+
+	// Subscribe to typing events, new messages, and message deletions
 	React.useEffect(() => {
 		const pusher = getPusherClient()
-		if (!pusher) return
+		if (!pusher || !threadId) return
 
 		const channel = pusher.subscribe(`thread-${threadId}`)
 
@@ -38,8 +54,27 @@ export function useTypingIndicator(threadId: string, currentUserId: string) {
 			})
 		})
 
+		// Listen for new messages
+		channel.bind("new-message", (data: Message) => {
+			// Ignore own messages (already added optimistically)
+			if (data.senderId === currentUserId) return
+			
+			if (onNewMessageRef.current) {
+				onNewMessageRef.current(data)
+			}
+		})
+
+		// Listen for message deletions
+		channel.bind("message-deleted", (data: { messageId: string }) => {
+			if (onMessageDeletedRef.current) {
+				onMessageDeletedRef.current(data.messageId)
+			}
+		})
+
 		return () => {
 			channel.unbind("typing")
+			channel.unbind("new-message")
+			channel.unbind("message-deleted")
 			pusher.unsubscribe(`thread-${threadId}`)
 		}
 	}, [threadId, currentUserId])

@@ -131,20 +131,35 @@ export function useBadgeCounts(pollInterval = 30000) {
 
 	const fetchCounts = React.useCallback(async () => {
 		try {
-			const [notifRes, msgRes] = await Promise.all([
+			const [notifRes, msgRes, privateRes] = await Promise.all([
 				fetch("/api/notification"),
 				fetch("/api/conversations"),
+				fetch("/api/messages"),
 			])
 
-			if (notifRes.ok && msgRes.ok) {
-				const notifData = await notifRes.json()
-				const msgData = await msgRes.json()
+			let notificationCount = 0
+			let messageCount = 0
 
-				setCounts({
-					notifications: notifData.unreadCount || 0,
-					messages: msgData.totalUnreadCount || 0,
-				})
+			if (notifRes.ok) {
+				const notifData = await notifRes.json()
+				notificationCount = notifData.unreadCount || 0
 			}
+
+			// Count how many PEOPLE have sent unread messages, not total messages
+			if (msgRes.ok) {
+				const msgData = await msgRes.json()
+				messageCount += msgData.unreadPeopleCount || 0
+			}
+
+			if (privateRes.ok) {
+				const privateData = await privateRes.json()
+				messageCount += privateData.unreadPeopleCount || 0
+			}
+
+			setCounts({
+				notifications: notificationCount,
+				messages: messageCount,
+			})
 		} catch {
 			// Ignore errors during polling
 		} finally {

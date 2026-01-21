@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input"
 import { Select } from "@/components/ui/Select"
 import { CATEGORIES, LOCATIONS } from "@/lib/data/categories"
 
+
 export type EventCreateValues = {
 	title: string
 	description: string
@@ -17,6 +18,7 @@ export type EventCreateValues = {
 	city: string
 	category: string
 	capacity: string
+	price?: number
 }
 
 export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCreateValues> }) {
@@ -77,6 +79,26 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 			alert("Гарчиг оруулна уу")
 			return
 		}
+		if (!values.description.trim()) {
+			alert("Эвентийн тайлбар оруулна уу")
+			return
+		}
+		if (!values.date.trim()) {
+			alert("Огноо оруулна уу")
+			return
+		}
+		if (!values.startTime.trim()) {
+			alert("Эхлэх цаг оруулна уу")
+			return
+		}
+		if (!values.city.trim()) {
+			alert("Хот болон байршил оруулна уу")
+			return
+		}
+		if (!values.category.trim()) {
+			alert("Эвентийн төрөл сонгоно уу")
+			return
+		}
 		setSaving(true)
 		try {
 			// Upload image first if selected
@@ -97,7 +119,7 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 				headers: { "content-type": "application/json" },
 				body: JSON.stringify({
 					title: values.title,
-					description: values.description,
+					excerpt: values.description,
 					date: values.date,
 					startAt: values.date && values.startTime 
 						? `${values.date}T${values.startTime}:00` 
@@ -105,6 +127,7 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 					city: values.city,
 					category: values.category,
 					capacity: values.capacity ? Number(values.capacity) : undefined,
+					price: values.price ? Number(values.price) : 0,
 					imageSrc,
 				}),
 			})
@@ -121,7 +144,7 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 
 			const body = (await res.json()) as { event: { id: string } }
 			setUploadProgress(null)
-			router.push(`/dashboard/events/${body.event.id}`)
+			router.push(`/events`)
 			router.refresh()
 		} finally {
 			setSaving(false)
@@ -132,13 +155,18 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 	return (
 		<form onSubmit={onSubmit} className="grid gap-4">
 			<div className="space-y-2">
-				<div className="text-sm font-medium">Эвентийн нэр</div>
+				<div className="text-sm font-medium">Гарчиг</div>
 				<Input value={values.title} onChange={(e) => update("title", e.target.value)} placeholder="Эвентийн нэр" />
 			</div>
 			<div className="space-y-3">
 			    <div className="text-sm font-medium">Тайлбар</div>
-				<Input value={values.description} onChange={(e) => update("description", e.target.value)} placeholder="Эвентийн тайлбар" />
-
+				 <textarea
+                value={values.description}
+                onChange={(e) => update("description", e.target.value)}
+                rows={2}
+                className="min-h-[180px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Эвентийн тухай танилцуулга болон тайлбар бичнэ үү."
+              />
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">
@@ -151,19 +179,10 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 					<Input type="time" value={values.startTime} onChange={(e) => update("startTime", e.target.value)} />
 				</div>
 			</div>
-	<Select
-				label="Хот"
-				value={values.city}
-				onChange={(e) => update("city", e.target.value)}
-				options={LOCATIONS.map((loc) => ({
-					value: loc.slug,
-					label: loc.nameMn,
-				}))}
-			/>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
-					<div className="text-sm font-medium">Байршил</div>
-					<Input value={values.city} onChange={(e) => update("city", e.target.value)} placeholder="Эвент болох хаяг" />
+					<div className="text-sm font-medium">Хот болон байршил</div>
+					<Input value={values.city} onChange={(e) => update("city", e.target.value)} placeholder="Ulaanbaatar , Regis tower 4-р давхар " />
 				</div>
 
 				<div className="space-y-2">
@@ -177,9 +196,18 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 					/>
 				</div>
 			</div>
+							<div className="space-y-2">
+								<div className="text-sm font-medium">Үнэ (₮)</div>
+								<Input
+									type="number"
+									value={values.price}
+									onChange={(e) => update("price", Number(e.target.value))}
+									placeholder="0"
+								/>
+							</div>
 
 			<Select
-				label="Эвентийн төрөл"
+				label= "Эвентийн төрөл"
 				value={values.category}
 				onChange={(e) => update("category", e.target.value)}
 				options={CATEGORIES.map((cat) => ({

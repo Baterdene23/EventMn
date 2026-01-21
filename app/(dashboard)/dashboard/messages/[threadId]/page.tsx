@@ -27,10 +27,26 @@ export default function ChatThreadPage({
 	const [error, setError] = useState<string | null>(null)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
 
-	// Typing indicator hook
+	// Handle new real-time message
+	const handleNewMessage = useCallback((message: Message) => {
+		setMessages((prev) => {
+			// Avoid duplicates
+			if (prev.some((m) => m.id === message.id)) return prev
+			return [...prev, { ...message, isOwn: false }]
+		})
+	}, [])
+
+	// Handle real-time message deletion
+	const handleMessageDeleted = useCallback((messageId: string) => {
+		setMessages((prev) => prev.filter((m) => m.id !== messageId))
+	}, [])
+
+	// Typing indicator hook with real-time message support
 	const { typingUsers, handleTyping, stopTyping } = useTypingIndicator(
 		threadId || "",
-		threadData?.currentUserId || ""
+		threadData?.currentUserId || "",
+		handleNewMessage,
+		handleMessageDeleted
 	)
 
 	// Resolve params
@@ -63,35 +79,6 @@ export default function ChatThreadPage({
 		}
 		fetchThread()
 	}, [threadId])
-
-	// Poll for new messages every 3 seconds
-	useEffect(() => {
-		if (!threadId || loading || error) return
-
-		const pollInterval = setInterval(async () => {
-			try {
-				const lastMessage = messages[messages.length - 1]
-				const lastTime = lastMessage ? new Date(lastMessage.createdAt).getTime() : 0
-
-				const res = await fetch(`/api/messages/${threadId}/stream?lastId=${lastTime}`)
-				if (res.ok) {
-					const data = await res.json()
-					if (data.messages && data.messages.length > 0) {
-						setMessages((prev) => {
-							const newMsgs = data.messages.filter(
-								(m: Message) => !prev.some((p) => p.id === m.id)
-							)
-							return [...prev, ...newMsgs]
-						})
-					}
-				}
-			} catch {
-				// Ignore polling errors
-			}
-		}, 3000)
-
-		return () => clearInterval(pollInterval)
-	}, [threadId, loading, error, messages])
 
 	// Scroll to bottom on new messages
 	useEffect(() => {

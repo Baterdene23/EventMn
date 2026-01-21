@@ -86,10 +86,14 @@ export async function GET() {
 
 	// Calculate total unread count
 	const totalUnreadCount = conversations.reduce((sum, c) => sum + c.unreadCount, 0)
+	
+	// Count how many PEOPLE/conversations have unread messages
+	const unreadPeopleCount = conversations.filter((c) => c.unreadCount > 0).length
 
 	return NextResponse.json({
 		conversations,
 		totalUnreadCount,
+		unreadPeopleCount,
 	})
 }
 

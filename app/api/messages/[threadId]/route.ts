@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth/session"
 import { prisma } from "@/lib/db/client"
 import { formatThreadId, getThreadIdCandidates } from "@/lib/messages/thread-id"
+import { getPusher } from "@/lib/pusher/server"
 
 async function resolveThreadParts(threadId: string): Promise<
 	| {
@@ -141,6 +142,23 @@ export async function POST(
 		},
 	})
 
+	// Trigger real-time event via Pusher
+	const pusher = getPusher()
+	if (pusher) {
+		try {
+			await pusher.trigger(`thread-${threadId}`, "new-message", {
+				id: message.id,
+				content: message.content,
+				senderId: message.senderId,
+				senderName: message.sender.name,
+				senderAvatar: message.sender.avatarUrl,
+				createdAt: message.createdAt,
+			})
+		} catch (error) {
+			console.error("Pusher trigger error:", error)
+		}
+	}
+
 	// Notification үүсгэх (хүснэгт байхгүй бол алдаа гаргахгүй)
 	try {
 		await prisma.notification.create({
@@ -215,6 +233,18 @@ export async function DELETE(
 	await prisma.privateMessage.delete({
 		where: { id: messageId },
 	})
+
+	// Trigger real-time delete event via Pusher
+	const pusher = getPusher()
+	if (pusher) {
+		try {
+			await pusher.trigger(`thread-${threadId}`, "message-deleted", {
+				messageId,
+			})
+		} catch (error) {
+			console.error("Pusher trigger error:", error)
+		}
+	}
 
 	return NextResponse.json({ ok: true })
 }

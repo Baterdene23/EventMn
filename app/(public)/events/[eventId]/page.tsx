@@ -95,7 +95,18 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
 						</p>
 					</div>
 
-					<Separator />
+					{event.description && (
+						<>
+							<Separator />
+
+							<div>
+								<h2 className="text-lg font-semibold">Дэлгэрэнгүй мэдээлэл</h2>
+								<p className="mt-3 whitespace-pre-wrap leading-relaxed text-muted-foreground">
+									{event.description}
+								</p>
+							</div>
+						</>
+					)}
 
 					<div>
 						<h2 className="text-lg font-semibold">Байршил</h2>

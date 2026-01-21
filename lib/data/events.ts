@@ -40,6 +40,7 @@ function toEventSummary(event: Event): EventSummary {
     status: mapEventStatus(event.status),
     category: mapCategoryLabel(event.category),
     excerpt: event.excerpt ?? undefined,
+    description: event.description ?? undefined,
     imageSrc: event.imageSrc ?? undefined,
     attendeeCount: event.attendeeCount,
   }
