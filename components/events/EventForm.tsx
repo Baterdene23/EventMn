@@ -7,7 +7,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Select } from "@/components/ui/Select"
-import { CATEGORIES } from "@/lib/data/categories"
+import { CATEGORIES, LOCATIONS } from "@/lib/data/categories"
 
 export type EventCreateValues = {
 	title: string
@@ -151,12 +151,21 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 					<Input type="time" value={values.startTime} onChange={(e) => update("startTime", e.target.value)} />
 				</div>
 			</div>
-
+	<Select
+				label="Хот"
+				value={values.city}
+				onChange={(e) => update("city", e.target.value)}
+				options={LOCATIONS.map((loc) => ({
+					value: loc.slug,
+					label: loc.nameMn,
+				}))}
+			/>
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
-					<div className="text-sm font-medium">Хот / Байршил</div>
+					<div className="text-sm font-medium">Байршил</div>
 					<Input value={values.city} onChange={(e) => update("city", e.target.value)} placeholder="Эвент болох хаяг" />
 				</div>
+
 				<div className="space-y-2">
 					<div className="text-sm font-medium">Оролцогчдын тоо</div>
 					<Input 
@@ -170,7 +179,7 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 			</div>
 
 			<Select
-				label="Төрөл"
+				label="Эвентийн төрөл"
 				value={values.category}
 				onChange={(e) => update("category", e.target.value)}
 				options={CATEGORIES.map((cat) => ({

@@ -3,7 +3,6 @@ import { NextResponse } from "next/server"
 
 
 import { getSession } from "@/lib/auth/session"
-import { blob } from 'stream/consumers';
 
 export async function POST(request: Request): Promise<NextResponse> {
 	const session = await getSession()

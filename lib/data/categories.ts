@@ -23,6 +23,7 @@ export const CATEGORIES: Category[] = [
 	{ slug: "community", label: "Community", labelMn: "Нийгэмлэг" },
 	{ slug: "education", label: "Education", labelMn: "Боловсрол" },
 	{ slug: "health", label: "Health & Wellness", labelMn: "Эрүүл мэнд" },
+	{ slug: "other", label: "Other", labelMn: "Бусад" },
 ]
 
 export const LOCATIONS: Location[] = [
@@ -30,6 +31,7 @@ export const LOCATIONS: Location[] = [
 	{ slug: "darkhan", name: "Darkhan", nameMn: "Дархан", country: "Mongolia", imageSrc: "/locations/darkhan.svg" },
 	{ slug: "erdenet", name: "Erdenet", nameMn: "Эрдэнэт", country: "Mongolia", imageSrc: "/locations/erdenet.svg" },
 	{ slug: "online", name: "Online", nameMn: "Онлайн", country: "Global", imageSrc: "/locations/online.svg" },
+	{ slug: "other", name: "Other", nameMn: "Бусад", country: "Global", imageSrc: "/locations/other.svg" },
 ]
 
 export function getCategoryBySlug(slug: string): Category | undefined {
