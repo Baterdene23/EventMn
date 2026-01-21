@@ -27,11 +27,11 @@ export const CATEGORIES: Category[] = [
 ]
 
 export const LOCATIONS: Location[] = [
-	{ slug: "ulaanbaatar", name: "Ulaanbaatar", nameMn: "Улаанбаатар", country: "Mongolia", imageSrc: "/locations/ulaanbaatar.svg" },
-	{ slug: "darkhan", name: "Darkhan", nameMn: "Дархан", country: "Mongolia", imageSrc: "/locations/darkhan.svg" },
-	{ slug: "erdenet", name: "Erdenet", nameMn: "Эрдэнэт", country: "Mongolia", imageSrc: "/locations/erdenet.svg" },
-	{ slug: "online", name: "Online", nameMn: "Онлайн", country: "Global", imageSrc: "/locations/online.svg" },
-	{ slug: "other", name: "Other", nameMn: "Бусад", country: "Global", imageSrc: "/locations/other.svg" },
+	{ slug: "ulaanbaatar", name: "Ulaanbaatar", nameMn: "Улаанбаатар", country: "Mongolia", imageSrc: "/locations/ulaanbaatar.png" },
+	{ slug: "darkhan", name: "Darkhan", nameMn: "Дархан", country: "Mongolia", imageSrc: "/locations/darkhan.png" },
+	{ slug: "erdenet", name: "Erdenet", nameMn: "Эрдэнэт", country: "Mongolia", imageSrc: "/locations/erdenet.png" },
+	{ slug: "online", name: "Online", nameMn: "Онлайн", country: "Global", imageSrc: "/locations/online.png" },
+	{ slug: "other", name: "Other", nameMn: "Бусад", country: "Global", imageSrc: "/locations/other.png" },
 ]
 
 export function getCategoryBySlug(slug: string): Category | undefined {
