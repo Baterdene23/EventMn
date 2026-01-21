@@ -42,7 +42,7 @@ export default function ChatThreadPage({
 	}, [])
 
 	// Typing indicator hook with real-time message support
-	const { typingUsers, handleTyping, stopTyping } = useTypingIndicator(
+	const { typingUsers, streamingMessage, handleTyping, stopTyping } = useTypingIndicator(
 		threadId || "",
 		threadData?.currentUserId || "",
 		handleNewMessage,
@@ -182,7 +182,7 @@ export default function ChatThreadPage({
 						))
 					)}
 					{/* Typing indicator */}
-					<TypingIndicator typingUsers={typingUsers} />
+					<TypingIndicator typingUsers={typingUsers} streamingMessage={streamingMessage} />
 					<div ref={messagesEndRef} />
 				</div>
 			</div>

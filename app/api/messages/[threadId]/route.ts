@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth/session"
 import { prisma } from "@/lib/db/client"
 import { formatThreadId, getThreadIdCandidates } from "@/lib/messages/thread-id"
-import { getPusher } from "@/lib/pusher/server"
+import { getPusher, triggerBadgeUpdate } from "@/lib/pusher/server"
 
 async function resolveThreadParts(threadId: string): Promise<
 	| {
@@ -154,6 +154,8 @@ export async function POST(
 				senderAvatar: message.sender.avatarUrl,
 				createdAt: message.createdAt,
 			})
+			// Trigger badge update for the receiver
+			await triggerBadgeUpdate(otherUserId)
 		} catch (error) {
 			console.error("Pusher trigger error:", error)
 		}

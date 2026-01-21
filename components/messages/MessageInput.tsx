@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/Input"
 
 interface MessageInputProps {
 	onSend: (content: string) => Promise<void>
-	onTyping?: () => void
+	onTyping?: (content?: string) => void
 	disabled?: boolean
 	placeholder?: string
+	enableStreaming?: boolean
 }
 
 export function MessageInput({
@@ -18,6 +19,7 @@ export function MessageInput({
 	onTyping,
 	disabled = false,
 	placeholder = "Мессеж бичих...",
+	enableStreaming = true,
 }: MessageInputProps) {
 	const [message, setMessage] = useState("")
 	const [sending, setSending] = useState(false)
@@ -47,10 +49,11 @@ export function MessageInput({
 	}
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setMessage(e.target.value)
-		// Trigger typing indicator
-		if (onTyping && e.target.value.length > 0) {
-			onTyping()
+		const value = e.target.value
+		setMessage(value)
+		// Trigger typing indicator with content for streaming
+		if (onTyping && value.length > 0) {
+			onTyping(enableStreaming ? value : undefined)
 		}
 	}
 

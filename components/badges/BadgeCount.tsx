@@ -4,6 +4,7 @@ import * as React from "react"
 import { Bell, MessageCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { getPusherClient } from "@/lib/pusher/client"
 
 type BadgeCountProps = {
 	count: number
@@ -119,7 +120,7 @@ export function NavbarBadges({
 }
 
 /**
- * Hook to fetch badge counts via API
+ * Hook to fetch badge counts via API with real-time Pusher updates
  * Use this for real-time updates in client components
  */
 export function useBadgeCounts(pollInterval = 30000) {
@@ -128,6 +129,7 @@ export function useBadgeCounts(pollInterval = 30000) {
 		messages: 0,
 	})
 	const [loading, setLoading] = React.useState(true)
+	const [userId, setUserId] = React.useState<string | null>(null)
 
 	const fetchCounts = React.useCallback(async () => {
 		try {
@@ -143,6 +145,10 @@ export function useBadgeCounts(pollInterval = 30000) {
 			if (notifRes.ok) {
 				const notifData = await notifRes.json()
 				notificationCount = notifData.unreadCount || 0
+				// Get userId from notification API for Pusher subscription
+				if (notifData.userId) {
+					setUserId(notifData.userId)
+				}
 			}
 
 			// Count how many PEOPLE have sent unread messages, not total messages
@@ -167,14 +173,37 @@ export function useBadgeCounts(pollInterval = 30000) {
 		}
 	}, [])
 
+	// Initial fetch
 	React.useEffect(() => {
 		fetchCounts()
+	}, [fetchCounts])
 
-		if (pollInterval > 0) {
-			const interval = setInterval(fetchCounts, pollInterval)
-			return () => clearInterval(interval)
+	// Subscribe to Pusher for real-time badge updates
+	React.useEffect(() => {
+		if (!userId) return
+
+		const pusher = getPusherClient()
+		if (!pusher) {
+			// Fallback to polling if Pusher is not available
+			if (pollInterval > 0) {
+				const interval = setInterval(fetchCounts, pollInterval)
+				return () => clearInterval(interval)
+			}
+			return
 		}
-	}, [fetchCounts, pollInterval])
+
+		const channel = pusher.subscribe(`user-${userId}`)
+
+		channel.bind("badge-update", () => {
+			// Refetch counts when badge update event received
+			fetchCounts()
+		})
+
+		return () => {
+			channel.unbind("badge-update")
+			pusher.unsubscribe(`user-${userId}`)
+		}
+	}, [userId, fetchCounts, pollInterval])
 
 	return { counts, loading, refetch: fetchCounts }
 }

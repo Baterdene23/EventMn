@@ -5,6 +5,14 @@ import { getPusherClient, type TypingEvent, type TypingUser } from "@/lib/pusher
 import type { Message } from "@/components/messages"
 
 const TYPING_TIMEOUT = 2000 // 2 seconds of inactivity = stopped typing
+const STREAM_DEBOUNCE = 100 // Debounce streaming to avoid too many requests
+
+// Message stream event type
+export type MessageStreamEvent = {
+	userId: string
+	userName: string
+	content: string
+}
 
 /**
  * Hook to manage typing indicator state and real-time messages
@@ -12,16 +20,21 @@ const TYPING_TIMEOUT = 2000 // 2 seconds of inactivity = stopped typing
  * @param currentUserId - Current user's ID (to ignore own typing events)
  * @param onNewMessage - Optional callback when a new message arrives
  * @param onMessageDeleted - Optional callback when a message is deleted
+ * @param enableStreaming - Enable message content streaming (default: true)
  */
 export function useTypingIndicator(
 	threadId: string,
 	currentUserId: string,
 	onNewMessage?: (message: Message) => void,
-	onMessageDeleted?: (messageId: string) => void
+	onMessageDeleted?: (messageId: string) => void,
+	enableStreaming = true
 ) {
 	const [typingUsers, setTypingUsers] = React.useState<TypingUser[]>([])
+	const [streamingMessage, setStreamingMessage] = React.useState<MessageStreamEvent | null>(null)
 	const [isTyping, setIsTyping] = React.useState(false)
 	const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+	const streamTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+	const lastStreamRef = React.useRef<number>(0)
 	const onNewMessageRef = React.useRef(onNewMessage)
 	const onMessageDeletedRef = React.useRef(onMessageDeleted)
 
@@ -34,7 +47,8 @@ export function useTypingIndicator(
 	// Subscribe to typing events, new messages, and message deletions
 	React.useEffect(() => {
 		const pusher = getPusherClient()
-		if (!pusher || !threadId) return
+		// Wait until we have valid threadId and currentUserId
+		if (!pusher || !threadId || !currentUserId) return
 
 		const channel = pusher.subscribe(`thread-${threadId}`)
 
@@ -54,10 +68,29 @@ export function useTypingIndicator(
 			})
 		})
 
+		// Listen for message streaming
+		channel.bind("message-stream", (data: MessageStreamEvent) => {
+			// Ignore own stream events
+			if (data.userId === currentUserId) return
+			
+			setStreamingMessage(data)
+			
+			// Clear streaming message after timeout (user stopped typing)
+			if (streamTimeoutRef.current) {
+				clearTimeout(streamTimeoutRef.current)
+			}
+			streamTimeoutRef.current = setTimeout(() => {
+				setStreamingMessage(null)
+			}, TYPING_TIMEOUT * 2)
+		})
+
 		// Listen for new messages
 		channel.bind("new-message", (data: Message) => {
 			// Ignore own messages (already added optimistically)
 			if (data.senderId === currentUserId) return
+			
+			// Clear streaming message when actual message arrives
+			setStreamingMessage(null)
 			
 			if (onNewMessageRef.current) {
 				onNewMessageRef.current(data)
@@ -73,6 +106,7 @@ export function useTypingIndicator(
 
 		return () => {
 			channel.unbind("typing")
+			channel.unbind("message-stream")
 			channel.unbind("new-message")
 			channel.unbind("message-deleted")
 			pusher.unsubscribe(`thread-${threadId}`)
@@ -93,6 +127,7 @@ export function useTypingIndicator(
 	// Send typing event to server
 	const sendTypingEvent = React.useCallback(
 		async (typing: boolean) => {
+			if (!threadId) return
 			try {
 				await fetch("/api/typing", {
 					method: "POST",
@@ -106,8 +141,30 @@ export function useTypingIndicator(
 		[threadId]
 	)
 
-	// Handle user typing
-	const handleTyping = React.useCallback(() => {
+	// Send message stream event to server (debounced)
+	const sendStreamEvent = React.useCallback(
+		async (content: string) => {
+			if (!threadId || !enableStreaming) return
+			
+			const now = Date.now()
+			if (now - lastStreamRef.current < STREAM_DEBOUNCE) return
+			lastStreamRef.current = now
+			
+			try {
+				await fetch("/api/typing", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ threadId, streamContent: content }),
+				})
+			} catch {
+				// Ignore errors
+			}
+		},
+		[threadId, enableStreaming]
+	)
+
+	// Handle user typing (with optional content for streaming)
+	const handleTyping = React.useCallback((content?: string) => {
 		// Clear existing timeout
 		if (typingTimeoutRef.current) {
 			clearTimeout(typingTimeoutRef.current)
@@ -119,12 +176,17 @@ export function useTypingIndicator(
 			sendTypingEvent(true)
 		}
 
+		// Send stream content if enabled and content provided
+		if (enableStreaming && content !== undefined) {
+			sendStreamEvent(content)
+		}
+
 		// Set timeout to stop typing
 		typingTimeoutRef.current = setTimeout(() => {
 			setIsTyping(false)
 			sendTypingEvent(false)
 		}, TYPING_TIMEOUT)
-	}, [isTyping, sendTypingEvent])
+	}, [isTyping, sendTypingEvent, sendStreamEvent, enableStreaming])
 
 	// Stop typing immediately (e.g., on message send)
 	const stopTyping = React.useCallback(() => {
@@ -143,11 +205,15 @@ export function useTypingIndicator(
 			if (typingTimeoutRef.current) {
 				clearTimeout(typingTimeoutRef.current)
 			}
+			if (streamTimeoutRef.current) {
+				clearTimeout(streamTimeoutRef.current)
+			}
 		}
 	}, [])
 
 	return {
 		typingUsers,
+		streamingMessage,
 		isTyping,
 		handleTyping,
 		stopTyping,

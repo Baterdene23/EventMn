@@ -30,7 +30,7 @@ export async function GET() {
 			},
 		})
 
-		return NextResponse.json({ notifications, unreadCount })
+		return NextResponse.json({ notifications, unreadCount, userId: session.userId })
 	} catch (error) {
 		if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021") {
 			return NextResponse.json({ notifications: [], unreadCount: 0 })

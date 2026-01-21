@@ -70,3 +70,42 @@ export async function triggerNewMessage(
 		return false
 	}
 }
+
+// Helper to trigger badge update for a specific user
+export async function triggerBadgeUpdate(userId: string): Promise<boolean> {
+	const pusher = getPusher()
+	if (!pusher) return false
+
+	try {
+		await pusher.trigger(`user-${userId}`, "badge-update", {
+			timestamp: Date.now(),
+		})
+		return true
+	} catch (error) {
+		console.error("Pusher badge trigger error:", error)
+		return false
+	}
+}
+
+// Helper to trigger message streaming (typing with content preview)
+export async function triggerMessageStream(
+	threadId: string,
+	userId: string,
+	userName: string,
+	content: string
+): Promise<boolean> {
+	const pusher = getPusher()
+	if (!pusher) return false
+
+	try {
+		await pusher.trigger(`thread-${threadId}`, "message-stream", {
+			userId,
+			userName,
+			content,
+		})
+		return true
+	} catch (error) {
+		console.error("Pusher stream trigger error:", error)
+		return false
+	}
+}

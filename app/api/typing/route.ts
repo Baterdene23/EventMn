@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
 import { getSession } from "@/lib/auth/session"
-import { triggerTyping } from "@/lib/pusher/server"
+import { triggerTyping, triggerMessageStream } from "@/lib/pusher/server"
 
 export async function POST(request: Request) {
 	const session = await getSession()
@@ -10,13 +10,25 @@ export async function POST(request: Request) {
 	}
 
 	const body = await request.json()
-	const { threadId, isTyping } = body as {
+	const { threadId, isTyping, streamContent } = body as {
 		threadId?: string
 		isTyping?: boolean
+		streamContent?: string // For message streaming
 	}
 
 	if (!threadId) {
 		return NextResponse.json({ error: "threadId шаардлагатай" }, { status: 400 })
+	}
+
+	// If streamContent is provided, send message stream event
+	if (streamContent !== undefined) {
+		const streamSuccess = await triggerMessageStream(
+			threadId,
+			session.userId,
+			session.userName || "Хэрэглэгч",
+			streamContent
+		)
+		return NextResponse.json({ ok: true, stream: streamSuccess })
 	}
 
 	const success = await triggerTyping(
