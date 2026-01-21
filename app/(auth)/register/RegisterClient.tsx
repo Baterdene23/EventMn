@@ -31,6 +31,11 @@ export function RegisterClient({ returnTo }: { returnTo?: string }) {
 				setError(data.error || "Бүртгэхэд алдаа гарлаа")
 				return
 			}
+				if (data.requiresOtp && data.email) {
+				sessionStorage.setItem("verify_email", data.email)
+				router.push(`/verify?email=${encodeURIComponent(data.email)}`)
+				return
+			}
 			router.push(returnTo || "/dashboard")
 			router.refresh()
 		} catch {
@@ -56,7 +61,7 @@ export function RegisterClient({ returnTo }: { returnTo?: string }) {
 					)}
 					<Input label="Нэр" name="name" placeholder="Таны нэр" />
 					<Input label="Имэйл" name="email" type="email" placeholder="you@example.com" required />
-					<Input label="Нууц үг" name="password" type="password" placeholder="••••••••" minLength={8} required />
+					<Input label="Нууц үг" name="password" type="password" placeholder="Нууц үг" minLength={8} required />
 					<Button className="w-full" type="submit" disabled={loading}>
 						{loading ? "Бүртгэж байна…" : "Бүртгүүлэх"}
 					</Button>

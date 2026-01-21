@@ -151,7 +151,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
 											<Button variant="outline" className="w-full" asChild>
 												<Link href={`/dashboard/messages/${event.id}_${record.ownerId}`}>
 													<MessageCircle className="mr-2 h-4 w-4" />
-													Холбогдох
+													Зохион байгуулагчтай холбогдох
 												</Link>
 											</Button>
 										)}

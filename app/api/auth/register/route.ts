@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { prisma } from "@/lib/db/client"
 import { SESSION_COOKIE_NAME } from "@/lib/auth/session"
+import { createOtp, sendOtpEmail } from "@/lib/auth/otp"
 
 export async function POST(request: Request) {
 	try {
@@ -47,6 +48,14 @@ export async function POST(request: Request) {
 				password,
 			},
 		})
+		const code = await createOtp(user.email, "VERIFY_EMAIL")
+        const emailResult = await sendOtpEmail(user.email, code, "VERIFY_EMAIL")
+          if (!emailResult.success) {
+             return NextResponse.json(
+            { error: emailResult.error || "Имэйл илгээхэд алдаа гарлаа" },
+          { status: 500 }
+           )
+         }
 
 		// Create session
 		const session = await prisma.session.create({

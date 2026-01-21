@@ -14,6 +14,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 	community: <Users className="h-5 w-5" />,
 	education: <PartyPopper className="h-5 w-5" />,
 	health: <Heart className="h-5 w-5" />,
+	other : <PartyPopper className="h-5 w-5" />,
 }
 
 interface CategoryNavProps {
