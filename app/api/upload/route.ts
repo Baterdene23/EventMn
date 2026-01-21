@@ -1,10 +1,11 @@
+import { put } from '@vercel/blob';
 import { NextResponse } from "next/server"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
+
 
 import { getSession } from "@/lib/auth/session"
+import { blob } from 'stream/consumers';
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
 	const session = await getSession()
 	if (!session) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -12,9 +13,9 @@ export async function POST(request: Request) {
 
 	try {
 		const formData = await request.formData()
-		const file = formData.get("file") as File | null
+		const file = formData.get("file") 
 
-		if (!file) {
+		if (!(file instanceof File)) {
 			return NextResponse.json({ error: "No file provided" }, { status: 400 })
 		}
 
@@ -41,19 +42,21 @@ export async function POST(request: Request) {
 		const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`
 
 		// Ensure uploads directory exists
-		const uploadsDir = path.join(process.cwd(), "public", "uploads")
-		await mkdir(uploadsDir, { recursive: true })
+		const blob = await put(`uploads/${uniqueName}`, file.stream(), {
+			access: 'public',
+			contentType: file.type,
+		});
 
 		// Write file to disk
-		const bytes = await file.arrayBuffer()
+		{/*const bytes = await file.arrayBuffer()
 		const buffer = Buffer.from(bytes)
 		const filePath = path.join(uploadsDir, uniqueName)
 		await writeFile(filePath, buffer)
 
 		// Return the public URL
-		const url = `/uploads/${uniqueName}`
+		const url = `/uploads/${uniqueName}`*/}
 
-		return NextResponse.json({ url }, { status: 201 })
+		return NextResponse.json({ url:blob.url }, { status: 201 })
 	} catch (error) {
 		console.error("Upload error:", error)
 		return NextResponse.json({ error: "Upload failed" }, { status: 500 })
