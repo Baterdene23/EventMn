@@ -160,12 +160,14 @@ export function EventEditForm({ event }: EventEditFormProps) {
 			</div>
 
 			<div className="space-y-2">
-				<div className="text-sm font-medium">Товч тайлбар</div>
-				<Input
-					value={values.excerpt}
-					onChange={(e) => update("excerpt", e.target.value)}
-					placeholder="Товч тайлбар"
-				/>
+				<div className="text-sm font-medium">Тайлбар</div>
+			 <textarea
+                value={values.description}
+                onChange={(e) => update("description", e.target.value)}
+                rows={2}
+                className="min-h-[180px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Эвентийн тухай танилцуулга болон тайлбар бичнэ үү."
+              />
 			</div>
 
 			<div className="grid gap-4 sm:grid-cols-2">
@@ -198,6 +200,15 @@ export function EventEditForm({ event }: EventEditFormProps) {
 						min="1"
 					/>
 				</div>
+						<div className="space-y-2">
+					<div className="text-sm font-medium">Үнэ (₮)</div>
+					<Input
+						type="number"
+						value={values.price}
+						onChange={(e) => update("price", Number(e.target.value))}
+						placeholder=""
+					/>
+				</div>
 			</div>
 
 			<div className="space-y-2">
@@ -219,15 +230,7 @@ export function EventEditForm({ event }: EventEditFormProps) {
 						label: cat.labelMn,
 					}))}
 				/>
-				<div className="space-y-2">
-					<div className="text-sm font-medium">Үнэ (₮)</div>
-					<Input
-						type="number"
-						value={values.price}
-						onChange={(e) => update("price", Number(e.target.value))}
-						placeholder=""
-					/>
-				</div>
+		
 			</div>
 
 			<div className="space-y-2">
