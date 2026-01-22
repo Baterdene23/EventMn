@@ -189,14 +189,6 @@ export function EventEditForm({ event }: EventEditFormProps) {
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
-					<div className="text-sm font-medium">Хот</div>
-					<Input
-						value={values.city}
-						onChange={(e) => update("city", e.target.value)}
-						placeholder="Улаанбаатар"
-					/>
-				</div>
-				<div className="space-y-2">
 					<div className="text-sm font-medium">Оролцогчдын тоо</div>
 					<Input
 						type="number"
@@ -209,11 +201,11 @@ export function EventEditForm({ event }: EventEditFormProps) {
 			</div>
 
 			<div className="space-y-2">
-				<div className="text-sm font-medium">Байршил</div>
+				<div className="text-sm font-medium">Хот болон байршил</div>
 				<Input
 					value={values.location}
 					onChange={(e) => update("location", e.target.value)}
-					placeholder="Байршлын дэлгэрэнгүй"
+					placeholder="Хот болон байршлын дэлгэрэнгүй"
 				/>
 			</div>
 

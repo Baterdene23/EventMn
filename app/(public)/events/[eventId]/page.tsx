@@ -32,14 +32,14 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
 	return (
 		<div className="space-y-8">
 			{/* Hero Image */}
-			<div className="relative -mx-4 -mt-8 h-64 overflow-hidden bg-muted sm:h-80 md:h-96 lg:-mx-0 lg:rounded-2xl">
+			<div className="relative -mx-4 mt-4 h-64 overflow-hidden bg-muted sm:h-80 md:h-96 lg:-mx-0 lg:rounded-2xl">
 				{event.imageSrc ? (
 					<Image
 						src={event.imageSrc}
 						alt={event.title}
 						fill
 						sizes="(max-width: 768px) 100vw, 1200px"
-						className="object-cover"
+						className="object-cover "
 						priority
 					/>
 				) : (
