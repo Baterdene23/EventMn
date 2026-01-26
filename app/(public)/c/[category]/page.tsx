@@ -76,7 +76,7 @@ export default async function CategoryBrowsePage({ params }: PageProps) {
 							<EventCard
 								key={event.id}
 								event={event}
-								href={`/e/${event.id}`}
+								href={`/events/${event.id}`}
 								isAuthed={!!session}
 								initialLiked={likedIds.has(event.id)}
 							/>

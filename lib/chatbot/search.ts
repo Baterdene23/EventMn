@@ -9,6 +9,7 @@ import { CATEGORIES } from "@/lib/data/categories"
 export type ChatEventFilters = {
   city?: string | null
   date_range?: string | null
+  specific_month?: number | null
   category?: string | null
   keywords?: string[]
   price_max?: number | null
@@ -117,6 +118,26 @@ function getDateRange(range: string | null): { from: Date; to: Date } {
 }
 
 /**
+ * Calculate date range for a specific month (1-12)
+ * If the month is in the past this year, use next year
+ */
+function getMonthRange(month: number): { from: Date; to: Date } {
+  const now = new Date()
+  let year = now.getFullYear()
+  
+  // If the specified month is before current month, use next year
+  if (month < now.getMonth() + 1) {
+    year += 1
+  }
+  
+  // month is 1-12, JavaScript Date uses 0-11
+  const from = new Date(year, month - 1, 1, 0, 0, 0, 0)
+  const to = new Date(year, month, 0, 23, 59, 59, 999) // Last day of month
+  
+  return { from, to }
+}
+
+/**
  * Get category slug variations for matching
  */
 function getCategoryMatches(categorySlug: string): string[] {
@@ -134,28 +155,41 @@ export async function searchEventsForChat(
   filters: ChatEventFilters
 ): Promise<ChatEventResult[]> {
   const limit = filters.limit ?? 10
-  const { from, to } = getDateRange(filters.date_range ?? null)
+  
+  // Determine date range: specific_month takes priority over date_range
+  let from: Date | null = null
+  let to: Date | null = null
+  
+  if (filters.specific_month != null && filters.specific_month >= 1 && filters.specific_month <= 12) {
+    const monthRange = getMonthRange(filters.specific_month)
+    from = monthRange.from
+    to = monthRange.to
+  } else if (filters.date_range) {
+    const dateRange = getDateRange(filters.date_range)
+    from = dateRange.from
+    to = dateRange.to
+  }
 
   // Build where conditions
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const where: any = {
     status: "PUBLISHED",
-    // Only events that haven't ended yet
-    OR: [
-      { startAt: { gte: from, lte: to } },
-      { startAt: null }, // Include events without specific startAt
-    ],
+  }
+  
+  // Date filter - only apply if we have a date range
+  if (from && to) {
+    where.startAt = { gte: from, lte: to }
   }
 
-  // City filter
-  if (filters.city) {
+  // City filter - only apply if specified (not default)
+  if (filters.city && filters.city !== "all") {
     where.city = { equals: filters.city, mode: "insensitive" }
   }
 
   // Category filter
   if (filters.category) {
     const categoryMatches = getCategoryMatches(filters.category)
-    where.category = { in: categoryMatches, mode: "insensitive" }
+    where.category = { in: categoryMatches }
   }
 
   // Price filter
@@ -175,13 +209,7 @@ export async function searchEventsForChat(
         { location: { contains: keyword, mode: "insensitive" as const } },
       ],
     }))
-    
-    if (where.OR) {
-      // Combine with existing OR conditions
-      where.AND = keywordConditions
-    } else {
-      where.AND = keywordConditions
-    }
+    where.AND = keywordConditions
   }
 
   const events = await prisma.event.findMany({
