@@ -7,15 +7,24 @@ import Image from "next/image"
 import { Button } from "@/components/ui/Button"
 import { Input } from "@/components/ui/Input"
 import { Select } from "@/components/ui/Select"
-import { CATEGORIES, LOCATIONS } from "@/lib/data/categories"
+import { CATEGORIES } from "@/lib/data/categories"
 
+const CITIES = [
+	{ value: "ulaanbaatar", label: "Улаанбаатар" },
+	{ value: "darkhan", label: "Дархан" },
+	{ value: "erdenet", label: "Эрдэнэт" },
+	{ value: "other", label: "Бусад" },
+]
 
 export type EventCreateValues = {
 	title: string
 	description: string
 	date: string
 	startTime: string
+	isOnline: boolean
 	city: string
+	location: string
+	meetingUrl: string
 	category: string
 	capacity: string
 	price?: number
@@ -31,7 +40,10 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 		description: defaultValues?.description ?? "",
 		date: defaultValues?.date ?? "",
 		startTime: defaultValues?.startTime ?? "",
+		isOnline: defaultValues?.isOnline ?? false,
 		city: defaultValues?.city ?? "",
+		location: defaultValues?.location ?? "",
+		meetingUrl: defaultValues?.meetingUrl ?? "",
 		category: defaultValues?.category ?? "",
 		capacity: defaultValues?.capacity ?? "",
 	})
@@ -91,9 +103,20 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 			alert("Эхлэх цаг оруулна уу")
 			return
 		}
-		if (!values.city.trim()) {
-			alert("Хот болон байршил оруулна уу")
-			return
+		if (values.isOnline) {
+			if (!values.meetingUrl.trim()) {
+				alert("Google Meet холбоос оруулна уу")
+				return
+			}
+		} else {
+			if (!values.city.trim()) {
+				alert("Хот сонгоно уу")
+				return
+			}
+			if (!values.location.trim()) {
+				alert("Тодорхой байршил оруулна уу")
+				return
+			}
 		}
 		if (!values.category.trim()) {
 			alert("Эвентийн төрөл сонгоно уу")
@@ -124,7 +147,10 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 					startAt: values.date && values.startTime 
 						? `${values.date}T${values.startTime}:00` 
 						: undefined,
-					city: values.city,
+					isOnline: values.isOnline,
+					city: values.isOnline ? "Online" : values.city,
+					location: values.isOnline ? "Online" : values.location,
+					meetingUrl: values.isOnline ? values.meetingUrl : undefined,
 					category: values.category,
 					capacity: values.capacity ? Number(values.capacity) : undefined,
 					price: values.price ? Number(values.price) : 0,
@@ -142,7 +168,7 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 				return
 			}
 
-			const body = (await res.json()) as { event: { id: string } }
+			await res.json()
 			setUploadProgress(null)
 			router.push(`/events`)
 			router.refresh()
@@ -179,12 +205,77 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 					<Input type="time" value={values.startTime} onChange={(e) => update("startTime", e.target.value)} />
 				</div>
 			</div>
-			<div className="grid gap-4 sm:grid-cols-2">
-				<div className="space-y-2">
-					<div className="text-sm font-medium">Хот болон байршил</div>
-					<Input value={values.city} onChange={(e) => update("city", e.target.value)} placeholder="Ulaanbaatar , Regis tower 4-р давхар " />
-				</div>
 
+			{/* Online/Offline сонголт */}
+			<div className="space-y-3">
+				<div className="text-sm font-medium">Эвентийн төрөл</div>
+				<label className="flex cursor-pointer items-center gap-3 rounded-lg border border-input bg-background p-3 transition-colors hover:bg-accent/50">
+					<input
+						type="checkbox"
+						checked={values.isOnline}
+						onChange={(e) => {
+							update("isOnline", e.target.checked)
+							if (e.target.checked) {
+								update("city", "")
+								update("location", "")
+							} else {
+								update("meetingUrl", "")
+							}
+						}}
+						className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+					/>
+					<div>
+						<div className="font-medium">Онлайн эвент</div>
+						<div className="text-xs text-muted-foreground">Google Meet эсвэл бусад онлайн платформоор</div>
+					</div>
+				</label>
+			</div>
+
+			{/* Online бол - Google Meet холбоос */}
+			{values.isOnline && (
+				<div className="space-y-2">
+					<div className="text-sm font-medium">Google Meet холбоос</div>
+					<Input
+						type="url"
+						value={values.meetingUrl}
+						onChange={(e) => update("meetingUrl", e.target.value)}
+						placeholder="https://meet.google.com/xxx-xxxx-xxx"
+					/>
+					<div className="text-xs text-muted-foreground">
+						Оролцогчдод энэ холбоосоор нэгдэх боломжтой болно
+					</div>
+				</div>
+			)}
+
+			{/* Offline бол - Хот болон байршил */}
+			{!values.isOnline && (
+				<>
+					<Select
+						label="Хот"
+						value={values.city}
+						onChange={(e) => update("city", e.target.value)}
+						options={CITIES.map((city) => ({
+							value: city.label,
+							label: city.label,
+						}))}
+					/>
+					{values.city && (
+						<div className="space-y-2">
+							<div className="text-sm font-medium">Тодорхой байршил</div>
+							<Input
+								value={values.location}
+								onChange={(e) => update("location", e.target.value)}
+								placeholder="Regis Tower 4-р давхар, Чингисийн өргөн чөлөө"
+							/>
+							<div className="text-xs text-muted-foreground">
+								Барилга, давхар, хаяг гэх мэт дэлгэрэнгүй байршил
+							</div>
+						</div>
+					)}
+				</>
+			)}
+
+			<div className="grid gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
 					<div className="text-sm font-medium">Оролцогчдын тоо</div>
 					<Input 
@@ -195,16 +286,16 @@ export function EventForm({ defaultValues }: { defaultValues?: Partial<EventCrea
 						min="1"
 					/>
 				</div>
+				<div className="space-y-2">
+					<div className="text-sm font-medium">Үнэ (₮)</div>
+					<Input
+						type="number"
+						value={values.price}
+						onChange={(e) => update("price", Number(e.target.value))}
+						placeholder="0"
+					/>
+				</div>
 			</div>
-							<div className="space-y-2">
-								<div className="text-sm font-medium">Үнэ (₮)</div>
-								<Input
-									type="number"
-									value={values.price}
-									onChange={(e) => update("price", Number(e.target.value))}
-									placeholder="0"
-								/>
-							</div>
 
 			<Select
 				label= "Эвентийн төрөл"

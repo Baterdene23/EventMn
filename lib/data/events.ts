@@ -27,6 +27,8 @@ function mapCategoryLabel(slug: string): string {
 
 // Map database event to UI EventSummary
 function toEventSummary(event: Event): EventSummary {
+  const onlineFields = event as unknown as { isOnline?: boolean; meetingUrl?: string | null }
+
   return {
     id: event.id,
     title: event.title,
@@ -43,6 +45,8 @@ function toEventSummary(event: Event): EventSummary {
     description: event.description ?? undefined,
     imageSrc: event.imageSrc ?? undefined,
     attendeeCount: event.attendeeCount,
+    isOnline: onlineFields.isOnline ?? false,
+    meetingUrl: onlineFields.meetingUrl ?? undefined,
   }
 }
 
@@ -220,6 +224,8 @@ export type CreateEventInput = {
   category: string
   excerpt?: string
   imageSrc?: string
+  isOnline?: boolean
+  meetingUrl?: string
 }
 
 function generateSlug(title: string): string {

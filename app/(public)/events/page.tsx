@@ -4,6 +4,16 @@ import { getDashboardCreatedEvents, getPublicEvents } from "@/lib/data/events"
 import { getSession } from "@/lib/auth/session"
 import { getLikedEventIds } from "@/lib/data/likes"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import Link from "next/link"
+
+const CITIES = [
+	{ value: "", label: "Бүгд" },
+	{ value: "Улаанбаатар", label: "Улаанбаатар" },
+	{ value: "Дархан", label: "Дархан" },
+	{ value: "Эрдэнэт", label: "Эрдэнэт" },
+	{ value: "Бусад", label: "Бусад" },
+	{ value: "Online", label: "Онлайн" },
+]
 
 type SortableEvent = EventSummary & {
 	location?: string
@@ -79,10 +89,36 @@ export default async function PublicEventsPage({
 				<div className="space-y-1">
 					<h1 className="text-3xl font-semibold tracking-tight">Эвентүүд</h1>
 					<p className="text-sm text-muted-foreground">
-						Нийт {totalEvents} эвент · {page} / {totalPages} хуудас
+						Нийт {totalEvents} эвент · {page} / {totalPages || 1} хуудас
 					</p>
 				</div>
 			</div>
+
+			{/* Хотоор шүүх */}
+			<div className="mt-6 flex flex-wrap gap-2">
+				{CITIES.map((cityOption) => {
+					const isActive = city === cityOption.value || (!city && cityOption.value === "")
+					const params = new URLSearchParams()
+					if (q) params.set("q", resolvedSearchParams?.q ?? "")
+					if (cityOption.value) params.set("city", cityOption.value)
+					const href = `/events${params.toString() ? `?${params.toString()}` : ""}`
+					
+					return (
+						<Link
+							key={cityOption.value}
+							href={href}
+							className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+								isActive
+									? "bg-primary text-primary-foreground"
+									: "bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+							}`}
+						>
+							{cityOption.label}
+						</Link>
+					)
+				})}
+			</div>
+
 			<div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 				{paginatedEvents.map((event) => {
 					const owned = ownedIds.has(event.id)

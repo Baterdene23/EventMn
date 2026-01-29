@@ -27,6 +27,8 @@ export async function POST(request: Request) {
 				category?: string
 				excerpt?: string
 				imageSrc?: string
+				isOnline?: boolean
+				meetingUrl?: string
 			}
 		| null
 	if (!body?.title?.trim()) {
@@ -45,6 +47,8 @@ export async function POST(request: Request) {
 		category: String(body.category ?? ""),
 		excerpt: body.excerpt ? String(body.excerpt) : "",
 		imageSrc: body.imageSrc ? String(body.imageSrc) : undefined,
+		isOnline: body.isOnline ?? false,
+		meetingUrl: body.meetingUrl ? String(body.meetingUrl) : undefined,
 	})
 
 	return NextResponse.json({ event }, { status: 201 })

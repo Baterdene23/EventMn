@@ -22,6 +22,8 @@ export type EventSummary = {
 	description?: string
 	imageSrc?: string
 	attendeeCount?: number
+	isOnline?: boolean
+	meetingUrl?: string
 }
 
 function IconCalendar(props: React.SVGProps<SVGSVGElement>) {
@@ -50,6 +52,15 @@ function IconUsers(props: React.SVGProps<SVGSVGElement>) {
 			<path d="M11 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" />
 			<path d="M22 21v-2a4 4 0 0 0-3-3.87" />
 			<path d="M16 3.13a4 4 0 0 1 0 7.75" />
+		</svg>
+	)
+}
+
+function IconVideo(props: React.SVGProps<SVGSVGElement>) {
+	return (
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+			<path d="m22 8-6 4 6 4V8Z" />
+			<rect width="14" height="12" x="2" y="6" rx="2" ry="2" />
 		</svg>
 	)
 }
@@ -141,8 +152,17 @@ export function EventCard({
 						{event.date}
 					</span>
 					<span className="inline-flex items-center gap-2">
-						<IconMapPin className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
-						{event.city}
+						{event.isOnline ? (
+							<>
+								<IconVideo className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4", "text-blue-500")} />
+								<span className="text-blue-600 dark:text-blue-400">Онлайн</span>
+							</>
+						) : (
+							<>
+								<IconMapPin className={cn(compact ? "h-3.5 w-3.5" : "h-4 w-4")} />
+								{event.city}
+							</>
+						)}
 					</span>
 					{typeof event.attendeeCount === "number" ? (
 						<span className="inline-flex items-center gap-2">

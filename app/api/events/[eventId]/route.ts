@@ -57,6 +57,8 @@ export async function PATCH(
 		category?: string
 		imageSrc?: string
 		status?: "DRAFT" | "PUBLISHED" | "CANCELLED" | "COMPLETED"
+		isOnline?: boolean
+		meetingUrl?: string | null
 	} | null
 
 	if (!body) {
@@ -78,6 +80,8 @@ export async function PATCH(
 			...(body.category !== undefined && { category: body.category }),
 			...(body.imageSrc !== undefined && { imageSrc: body.imageSrc }),
 			...(body.status !== undefined && { status: body.status }),
+			...(body.isOnline !== undefined && { isOnline: body.isOnline }),
+			...(body.meetingUrl !== undefined && { meetingUrl: body.meetingUrl }),
 		},
 	})
 

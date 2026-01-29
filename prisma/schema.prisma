@@ -59,6 +59,8 @@ model Event {
   publishedAt     DateTime?
   ownerId         String
   capacity        Int?
+  isOnline        Boolean          @default(false)
+  meetingUrl      String?
   attendees       Attendee[]
   messages        EventMessage[]
   owner           User             @relation("EventOwner", fields: [ownerId], references: [id], onDelete: Cascade)
@@ -68,6 +70,7 @@ model Event {
   @@index([ownerId])
   @@index([city])
   @@index([category])
+  @@index([isOnline])
   @@map("events")
 }
 

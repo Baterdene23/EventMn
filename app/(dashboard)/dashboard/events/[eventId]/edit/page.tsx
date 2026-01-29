@@ -46,12 +46,16 @@ export default async function EventEditPage({
 					excerpt: event.excerpt,
 					description: event.description,
 					date: event.date,
+					startAt: event.startAt?.toISOString(),
 					city: event.city,
 					location: event.location,
 					category: event.category,
 					price: event.price,
+					capacity: event.capacity,
 					imageSrc: event.imageSrc,
 					status: event.status,
+					isOnline: event.isOnline,
+					meetingUrl: event.meetingUrl,
 				}}
 			/>
 		</div>
