@@ -41,13 +41,19 @@ type PublicAppBarProps = {
 export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sheetOpen, setSheetOpen] = useState(false);
   const { counts } = useBadgeCounts(isAuthed ? 30000 : 0);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (searchQuery.trim()) {
+      setSheetOpen(false);
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
+  }
+
+  function handleLinkClick() {
+    setSheetOpen(false);
   }
 
   async function handleLogout() {
@@ -209,7 +215,7 @@ export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarPr
           )}
 
           {/* Mobile Menu */}
-          <Sheet>
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="md:hidden">
                 <Menu className="h-5 w-5" />
@@ -225,15 +231,21 @@ export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarPr
               <div className="mt-6 space-y-6">
                 {/* Mobile Search */}
                 <form onSubmit={handleSearch}>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Эвент хайх..."
-                      className="pl-9"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
+                  <div className="relative flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        type="search"
+                        placeholder="Эвент хайх..."
+                        className="pl-9"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                    <Button type="submit" size="icon" variant="default">
+                      <Search className="h-4 w-4" />
+                      <span className="sr-only">Хайх</span>
+                    </Button>
                   </div>
                 </form>
 
@@ -243,12 +255,13 @@ export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarPr
                     <Link
                       key={link.href}
                       href={link.href}
+                      onClick={handleLinkClick}
                       className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
                     >
                       {link.label}
                     </Link>
                   ))}
-                  <Link href="/events/create" className="block rounded-md px-3 py-2 text-sm hover:bg-accent">
+                  <Link href="/events/create" onClick={handleLinkClick} className="block rounded-md px-3 py-2 text-sm hover:bg-accent">
                     Эвент үүсгэх
                   </Link>
                 </nav>
@@ -260,7 +273,8 @@ export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarPr
                     {CATEGORIES.slice(0, 6).map((cat) => (
                       <Link
                         key={cat.slug}
-                        href={`/b/ulaanbaatar/${cat.slug}`}
+                        href={`/c/${cat.slug}`}
+                        onClick={handleLinkClick}
                         className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
                       >
                         {cat.labelMn}
@@ -277,6 +291,7 @@ export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarPr
                       <Link
                         key={loc.slug}
                         href={`/d/${loc.slug}`}
+                        onClick={handleLinkClick}
                         className="block rounded-md px-3 py-2 text-sm hover:bg-accent"
                       >
                         {loc.nameMn}
@@ -289,10 +304,10 @@ export function PublicAppBar({ isAuthed = false, userAvatarUrl }: PublicAppBarPr
                 {!isAuthed && (
                   <div className="space-y-2 pt-4">
                     <Button className="w-full" asChild>
-                      <Link href="/register">Бүртгүүлэх</Link>
+                      <Link href="/register" onClick={handleLinkClick}>Бүртгүүлэх</Link>
                     </Button>
                     <Button variant="outline" className="w-full" asChild>
-                      <Link href="/login">Нэвтрэх</Link>
+                      <Link href="/login" onClick={handleLinkClick}>Нэвтрэх</Link>
                     </Button>
                   </div>
                 )}
